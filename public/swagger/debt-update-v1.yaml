@@ -1,0 +1,311 @@
+openapi: 3.0.0
+info:
+  title: TestPayment Ltd - Debt updates API
+  description: API to update debt information data
+  version: 1.0.0
+  contact:
+    email: marin.petrov@gmail.com
+servers:
+- url: https://api-test.domain.com/debt-updates/v1
+tags:
+  - name: Loans
+paths:
+  /loans:
+    post:
+      tags:
+        - Loans
+      summary: Add Loan or change credit limit
+      description: adds a new Loan or changes existing one
+      operationId: saveLoan
+      requestBody:
+        description: JSON object containing loan information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Loan'
+        required: true
+      responses:
+        200:
+          description: Default response code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseAfterDICRequest'
+        400:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Authentication is missing or not correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - basicAuth: []
+  /loans/pay:
+    post:
+      tags:
+        - Loans
+      summary: Pay Loan
+      description: pays a Loan
+      operationId: payLoan
+      requestBody:
+        description: JSON object containing debt information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanIdentifier'
+        required: true
+      responses:
+        200:
+          description: Default response code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseAfterDICRequest'
+        400:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Authentication is missing or not correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - basicAuth: []
+  /loans/balanceInterestUpdate:
+    post:
+      tags:
+        - Loans
+      summary: update interest or balance
+      description: updatest Loan's interest or balance
+      operationId: balanceInterestUpdate
+      requestBody:
+        description: JSON object containing debt information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Loan'
+        required: true
+      responses:
+        200:
+          description: Default response code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        400:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Authentication is missing or not correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - basicAuth: []
+  /loans/{accountID}:
+    get:
+      tags:
+        - Loans
+      summary: gets a Loan
+      description: information about a single Loan
+      operationId: readLoan
+      parameters:
+        - name: accountID
+          in: path
+          description: ID of loan to return
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Default response code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+        400:
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Authentication is missing or not correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - basicAuth: []
+components:
+  schemas:
+    Loan:
+      type: object
+      properties:
+        customerID:
+          type: string
+          description: 11-digits SSN
+        type:
+          type: string
+          enum: ["repaymentLoan", "creditFacility", "chargeCard"]
+        accountID:
+          type: string
+          description: unique id for the loan
+        accountName:
+          type: string
+        originalBalance:
+          type: string
+          description: only for type repaymentLoan
+        interestBearingBalance:
+          type: string
+          description: for type creditFacility or chargeCard
+        nonInterestBearingBalance:
+          type: string
+          description: for type creditFacility or chargeCard
+        creditLimit:
+          type: string
+          description: only for type creditFacility
+        balance:
+          type: string
+          description: only for type repaymentLoan
+        terms:
+          type: string
+          description: number of months (only for type repaymentLoan)
+        nominalInterestRate:
+          type: string
+          description: for type repaymentLoan or creditFacility
+        installmentCharges:
+          type: string
+          description: for type repaymentLoan or creditFacility
+        installmentChargePeriod:
+          type: string
+          default: "MONTHLY"
+          description: for type repaymentLoan or creditFacility
+        coBorrower:
+          type: string
+          enum: ["0", "1", "2"]
+          description: 0 - no, 1 - is coBorrower, 2 - has coBorrower
+      description: Loan representing a customer loan
+    LoanIdentifier:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["repaymentLoan", "creditFacility", "chargeCard"]
+        accountID:
+          type: string
+          description: unique id for the loan
+      description: Loan is idetified by type and id
+    ErrorResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+        error:
+          $ref: '#/components/schemas/ErrorItem'
+      description: Response representing the default response object for all API calls
+        to the API. Also containing errors if any.
+    ErrorItem:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        file:
+          type: string
+        line: 
+          type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetailsItem'
+    ErrorDetailsItem:
+      type: object
+      properties:
+        message:
+          type: string
+        field:
+          type: string
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        uuid:
+          type: string
+          format: uuid
+    ResponseAfterDICRequest:
+      type: object
+      properties:
+        success:
+          type: boolean
+        uuid:
+          type: string
+          format: uuid
+        message:
+          type: string
+        DICResponse:
+          $ref: '#/components/schemas/DICResponse'
+    DICResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        content:
+          $ref: '#/components/schemas/DICResponseContent'
+    DICResponseContent:
+      type: object
+      properties:
+        uuid:
+          type: string
+        timestamp:
+          type: string
+        errorMessage:
+          type: string
+        errorCode:
+          type: string
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
